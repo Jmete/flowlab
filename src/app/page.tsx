@@ -33,7 +33,7 @@ export default function HomePage() {
           <div>
             <h1 className="text-base font-semibold uppercase tracking-[0.16em]">FlowLab</h1>
             <p className="text-[11px] uppercase tracking-[0.11em] text-muted-foreground">
-              Find Bottlenecks In Flow Diagrams
+              Edmonds-Karp Max Flow - Find Bottlenecks
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
