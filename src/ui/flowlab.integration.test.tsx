@@ -53,6 +53,54 @@ describe("flowlab store integration", () => {
     expect(afterRun.events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "dinic" });
   });
 
+  it("reruns with selected algorithm when play is pressed after switching algorithms", () => {
+    const store = useFlowLabStore.getState();
+
+    store.addNode(10, 10);
+    store.addNode(300, 100);
+    store.setNodeRole("n1", "source");
+    store.setNodeRole("n2", "sink");
+    store.addEdge("n1", "n2", 5);
+
+    store.setAlgorithm("edmonds-karp");
+    store.runMaxFlow();
+    expect(useFlowLabStore.getState().events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "edmonds-karp" });
+
+    store.setAlgorithm("push-relabel");
+    store.play();
+
+    const afterPlay = useFlowLabStore.getState();
+    expect(afterPlay.events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "push-relabel" });
+    afterPlay.pause();
+  });
+
+  it("auto-runs selected algorithm when stepping forward/backward", () => {
+    const store = useFlowLabStore.getState();
+
+    store.addNode(10, 10);
+    store.addNode(300, 100);
+    store.setNodeRole("n1", "source");
+    store.setNodeRole("n2", "sink");
+    store.addEdge("n1", "n2", 5);
+
+    store.setAlgorithm("dinic");
+    store.stepForward();
+
+    let current = useFlowLabStore.getState();
+    expect(current.events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "dinic" });
+    expect(current.playback.cursor).toBe(0);
+
+    store.setAlgorithm("push-relabel");
+    store.stepForward();
+
+    current = useFlowLabStore.getState();
+    expect(current.events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "push-relabel" });
+    expect(current.playback.cursor).toBe(0);
+
+    store.stepBack();
+    expect(useFlowLabStore.getState().playback.cursor).toBe(-1);
+  });
+
   it("supports import/export roundtrip", () => {
     const store = useFlowLabStore.getState();
     store.loadAmlExample();

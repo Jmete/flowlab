@@ -246,6 +246,14 @@ function resetPlayback(graph: Graph) {
   };
 }
 
+function getAlgorithmUsedByEvents(events: FlowEvent[]): MaxFlowAlgorithmId | undefined {
+  const algorithmEvent = events.find((event) => event.type === "ALGORITHM_SELECTED");
+  if (!algorithmEvent) {
+    return undefined;
+  }
+  return algorithmEvent.algorithm;
+}
+
 function applyGraphMutation(state: FlowLabState, mutator: (graph: Graph) => void): Pick<FlowLabState, "graph" | "history" | "events" | "playback" | "playbackCache" | "maxFlowValue" | "minCut" | "error"> {
   const nextGraph = cloneGraph(state.graph);
   mutator(nextGraph);
@@ -539,7 +547,13 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   },
 
   stepForward: () => {
-    const state = get();
+    let state = get();
+    const algorithmFromEvents = getAlgorithmUsedByEvents(state.events);
+    if (state.events.length === 0 || algorithmFromEvents !== state.algorithm) {
+      get().runMaxFlow();
+      state = get();
+    }
+
     if (state.events.length === 0) {
       return;
     }
@@ -552,7 +566,13 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   },
 
   stepBack: () => {
-    const state = get();
+    let state = get();
+    const algorithmFromEvents = getAlgorithmUsedByEvents(state.events);
+    if (state.events.length === 0 || algorithmFromEvents !== state.algorithm) {
+      get().runMaxFlow();
+      state = get();
+    }
+
     if (state.events.length === 0) {
       return;
     }
@@ -582,7 +602,13 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   },
 
   play: () => {
-    const state = get();
+    let state = get();
+    const algorithmFromEvents = getAlgorithmUsedByEvents(state.events);
+    if (state.events.length === 0 || algorithmFromEvents !== state.algorithm) {
+      get().runMaxFlow();
+      state = get();
+    }
+
     if (state.events.length === 0 || state.isPlaying) {
       return;
     }
