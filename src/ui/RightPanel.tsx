@@ -65,12 +65,32 @@ export function RightPanel() {
       .sort((a, b) => b.capacity - a.capacity || a.id.localeCompare(b.id));
   }, [graph.edges, minCut?.cutEdges]);
 
+  const plainLanguageSummary = React.useMemo(() => {
+    if (!minCut || bottlenecks.length === 0) {
+      return "Run max-flow to see a plain-language bottleneck summary.";
+    }
+
+    const topEdge = bottlenecks[0];
+    const fromLabel = graph.nodes[topEdge.from]?.label ?? topEdge.from;
+    const toLabel = graph.nodes[topEdge.to]?.label ?? topEdge.to;
+    const intakeNode = Object.values(graph.nodes).find((node) => node.role === "source");
+    const intakeLabel = intakeNode?.label ?? "incoming workload";
+
+    return `The main bottleneck is between ${fromLabel} and ${toLabel}. Increase ${fromLabel} capacity before adding more ${intakeLabel}.`;
+  }, [bottlenecks, graph.nodes, minCut]);
+
+  React.useEffect(() => {
+    if (selection.nodeId || selection.edgeId) {
+      setTab("properties");
+    }
+  }, [selection.edgeId, selection.nodeId]);
+
   return (
-    <Card className="h-full overflow-hidden border-white/30 bg-card/85 backdrop-blur-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Inspector</CardTitle>
+    <Card className="flex h-full min-h-0 flex-col overflow-hidden">
+      <CardHeader className="border-b border-border/60 pb-3">
+        <CardTitle>Inspector</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-0 flex-1 overflow-y-auto">
         <BeginnerModePanel />
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
@@ -81,8 +101,8 @@ export function RightPanel() {
 
           <TabsContent value="properties" className="space-y-3">
             {selectedNode ? (
-              <div className="space-y-2 rounded-md border p-3">
-                <h4 className="text-sm font-semibold">Node {selectedNode.id}</h4>
+              <div className="space-y-2 rounded-sm border border-border/70 bg-[hsl(var(--panel)/0.5)] p-3">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.11em]">Node {selectedNode.id}</h4>
                 <Input value={selectedNode.label} onChange={(event) => renameNode(selectedNode.id, event.target.value)} />
                 <Select value={selectedNode.role} onChange={(event) => setNodeRole(selectedNode.id, event.target.value as "normal" | "source" | "sink")}> 
                   <option value="normal">normal</option>
@@ -94,8 +114,8 @@ export function RightPanel() {
             ) : null}
 
             {selectedEdge ? (
-              <div className="space-y-2 rounded-md border p-3">
-                <h4 className="text-sm font-semibold">Edge {selectedEdge.id}</h4>
+              <div className="space-y-2 rounded-sm border border-border/70 bg-[hsl(var(--panel)/0.5)] p-3">
+                <h4 className="text-xs font-semibold uppercase tracking-[0.11em]">Edge {selectedEdge.id}</h4>
                 <div className="text-sm text-muted-foreground">
                   {selectedEdge.from} {"->"} {selectedEdge.to}
                 </div>
@@ -114,8 +134,8 @@ export function RightPanel() {
             {!selectedNode && !selectedEdge ? <p className="text-sm text-muted-foreground">Select a node or edge to edit properties.</p> : null}
 
             {warnings.length > 0 ? (
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-                <div className="font-semibold">Warnings</div>
+              <div className="rounded-sm border border-accent/45 bg-accent/14 p-3 text-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.11em]">Warnings</div>
                 <ul className="mt-1 list-disc pl-5">
                   {warnings.map((warning) => (
                     <li key={warning}>{warning}</li>
@@ -124,16 +144,16 @@ export function RightPanel() {
               </div>
             ) : null}
 
-            {error ? <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm">{error}</div> : null}
+            {error ? <div className="rounded-sm border border-destructive/55 bg-destructive/14 p-3 text-sm">{error}</div> : null}
           </TabsContent>
 
           <TabsContent value="log">
-              <div className="max-h-[60vh] space-y-1 overflow-auto rounded-md border border-border/80 p-2 text-sm">
+              <div className="max-h-[60vh] space-y-1 overflow-auto rounded-sm border border-border/75 bg-[hsl(var(--panel)/0.45)] p-2 text-sm">
               {events.length === 0 ? <div className="text-muted-foreground">Run max-flow to generate event log.</div> : null}
               {events.map((event, index) => (
                 <div
                   key={`${event.type}-${index}`}
-                  className={index <= playback.cursor ? "rounded px-2 py-1 bg-accent text-accent-foreground" : "rounded px-2 py-1"}
+                  className={index <= playback.cursor ? "rounded-sm border border-accent/45 bg-accent/20 px-2 py-1" : "rounded-sm px-2 py-1"}
                 >
                   {index + 1}. {formatFlowEvent(event)}
                 </div>
@@ -142,24 +162,29 @@ export function RightPanel() {
           </TabsContent>
 
           <TabsContent value="results" className="space-y-3">
-            <div className="rounded-md border p-3 text-sm">
+            <div className="rounded-sm border border-primary/45 bg-primary/12 p-3 text-sm">
+              <div className="mb-1 text-xs font-semibold uppercase tracking-[0.11em]">What this means</div>
+              <div>{plainLanguageSummary}</div>
+            </div>
+
+            <div className="rounded-sm border border-border/70 bg-[hsl(var(--panel)/0.5)] p-3 text-sm">
               <div>Max flow: <span className="font-semibold">{maxFlowValue}</span></div>
               <div>Cut capacity: <span className="font-semibold">{minCut?.cutCapacity ?? 0}</span></div>
             </div>
 
-            <div className="rounded-md border p-3 text-sm">
-              <div className="mb-2 font-semibold">Bottleneck edges</div>
+            <div className="rounded-sm border border-border/70 bg-[hsl(var(--panel)/0.5)] p-3 text-sm">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.11em]">Bottleneck edges</div>
               {bottlenecks.length === 0 ? <div className="text-muted-foreground">Run algorithm to compute cut edges.</div> : null}
               {bottlenecks.map((edge) => (
                 <div key={edge.id} className="flex justify-between py-0.5">
-                  <span>{edge.from} {"->"} {edge.to}</span>
+                  <span>{graph.nodes[edge.from]?.label ?? edge.from} {"->"} {graph.nodes[edge.to]?.label ?? edge.to}</span>
                   <span>{edge.capacity}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-md border p-3 text-sm">
-              <div className="mb-2 font-semibold">Assignment view (flow {" > "} 0)</div>
+            <div className="rounded-sm border border-border/70 bg-[hsl(var(--panel)/0.5)] p-3 text-sm">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.11em]">Assignment view (flow {" > "} 0)</div>
               {flowingEdges.length === 0 ? <div className="text-muted-foreground">No routed flow yet.</div> : null}
               {flowingEdges.map((edge) => (
                 <div key={edge.id} className="flex justify-between py-0.5">

@@ -1,22 +1,24 @@
 {
   "nodes": {
-    "s": { "id": "s", "label": "Source", "x": 80, "y": 220, "role": "source" },
-    "a": { "id": "a", "label": "Inlet A", "x": 260, "y": 120, "role": "normal" },
-    "c": { "id": "c", "label": "Inlet C", "x": 260, "y": 320, "role": "normal" },
-    "b": { "id": "b", "label": "Hub B", "x": 470, "y": 120, "role": "normal" },
-    "d": { "id": "d", "label": "Hub D", "x": 470, "y": 320, "role": "normal" },
-    "t": { "id": "t", "label": "Sink", "x": 680, "y": 220, "role": "sink" }
+    "s": { "id": "s", "label": "Incoming Applications", "x": 80, "y": 230, "role": "source" },
+    "review": { "id": "review", "label": "Resume Review", "x": 230, "y": 230, "role": "normal" },
+    "mia": { "id": "mia", "label": "Recruiter Mia", "x": 410, "y": 120, "role": "normal" },
+    "noah": { "id": "noah", "label": "Recruiter Noah", "x": 410, "y": 230, "role": "normal" },
+    "zoe": { "id": "zoe", "label": "Recruiter Zoe", "x": 410, "y": 340, "role": "normal" },
+    "hm": { "id": "hm", "label": "Hiring Manager Interview", "x": 620, "y": 185, "role": "normal" },
+    "offer": { "id": "offer", "label": "Offer Approval", "x": 620, "y": 300, "role": "normal" },
+    "t": { "id": "t", "label": "Candidates Placed", "x": 800, "y": 240, "role": "sink" }
   },
   "edges": {
-    "e1": { "id": "e1", "from": "s", "to": "a", "capacity": 16, "flow": 0, "directed": true },
-    "e2": { "id": "e2", "from": "s", "to": "c", "capacity": 13, "flow": 0, "directed": true },
-    "e3": { "id": "e3", "from": "a", "to": "b", "capacity": 12, "flow": 0, "directed": true },
-    "e4": { "id": "e4", "from": "b", "to": "c", "capacity": 9, "flow": 0, "directed": true },
-    "e5": { "id": "e5", "from": "c", "to": "a", "capacity": 4, "flow": 0, "directed": true },
-    "e6": { "id": "e6", "from": "c", "to": "d", "capacity": 14, "flow": 0, "directed": true },
-    "e7": { "id": "e7", "from": "d", "to": "b", "capacity": 7, "flow": 0, "directed": true },
-    "e8": { "id": "e8", "from": "b", "to": "t", "capacity": 20, "flow": 0, "directed": true },
-    "e9": { "id": "e9", "from": "d", "to": "t", "capacity": 4, "flow": 0, "directed": true }
+    "e1": { "id": "e1", "from": "s", "to": "review", "capacity": 18, "flow": 0, "directed": true },
+    "e2": { "id": "e2", "from": "review", "to": "mia", "capacity": 6, "flow": 0, "directed": true },
+    "e3": { "id": "e3", "from": "review", "to": "noah", "capacity": 5, "flow": 0, "directed": true },
+    "e4": { "id": "e4", "from": "review", "to": "zoe", "capacity": 4, "flow": 0, "directed": true },
+    "e5": { "id": "e5", "from": "mia", "to": "hm", "capacity": 5, "flow": 0, "directed": true },
+    "e6": { "id": "e6", "from": "noah", "to": "hm", "capacity": 4, "flow": 0, "directed": true },
+    "e7": { "id": "e7", "from": "zoe", "to": "hm", "capacity": 4, "flow": 0, "directed": true },
+    "e8": { "id": "e8", "from": "hm", "to": "offer", "capacity": 9, "flow": 0, "directed": true },
+    "e9": { "id": "e9", "from": "offer", "to": "t", "capacity": 10, "flow": 0, "directed": true }
   },
   "meta": {
     "version": "1.0",

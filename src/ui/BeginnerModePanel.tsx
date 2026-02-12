@@ -86,7 +86,7 @@ function explainEvent(event?: FlowEvent): { title: string; text: string } {
 
 function LegendChip({ color, label }: { color: string; label: string }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs">
+    <div className="inline-flex items-center gap-2 rounded-sm border border-border/75 bg-[hsl(var(--panel)/0.45)] px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em]">
       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
       <span>{label}</span>
     </div>
@@ -110,19 +110,19 @@ export function BeginnerModePanel() {
   const explanation = explainEvent(activeEvent);
 
   return (
-    <div className="mb-3 space-y-2 rounded-lg border border-sky-500/30 bg-sky-500/10 p-3">
+    <div className="mb-3 space-y-2 rounded-sm border border-primary/45 bg-primary/10 p-3">
       <div>
-        <div className="text-sm font-semibold">Beginner Mode: {explanation.title}</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.11em]">Guide Mode: {explanation.title}</div>
         <p className="mt-1 text-xs text-muted-foreground">{explanation.text}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <LegendChip color="#64748b" label="Gray: normal edge" />
-        <LegendChip color="#f59e0b" label="Yellow: active path/search" />
-        <LegendChip color="#ef4444" label="Red: min-cut bottleneck" />
+        <LegendChip color="hsl(var(--edge-base))" label="Normal edge" />
+        <LegendChip color="hsl(var(--edge-highlight))" label="Active path/search" />
+        <LegendChip color="hsl(var(--edge-cut))" label="Min-cut bottleneck" />
       </div>
 
-      <div className="rounded-md border bg-background/70 p-2 text-xs text-muted-foreground">
+      <div className="rounded-sm border border-border/70 bg-background/65 p-2 text-xs text-muted-foreground">
         Source = where flow starts. Sink = where flow ends. Residual graph = remaining routing options after each step.
       </div>
     </div>

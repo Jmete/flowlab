@@ -13,6 +13,7 @@ import { normalizeImportedGraph, type Graph } from "@/models/graph";
 
 export function ControlBar() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [showUtilities, setShowUtilities] = React.useState(false);
 
   const {
     graph,
@@ -75,6 +76,7 @@ export function ControlBar() {
   );
 
   const nodes = Object.values(graph.nodes);
+  const edgeCount = Object.keys(graph.edges).length;
   const sourceId = nodes.find((node) => node.role === "source")?.id ?? "";
   const sinkId = nodes.find((node) => node.role === "sink")?.id ?? "";
 
@@ -117,27 +119,33 @@ export function ControlBar() {
   }
 
   return (
-    <div className="grid gap-2 rounded-xl border border-white/40 bg-card/90 p-3 shadow-sm backdrop-blur-sm">
+    <div className="panel-shell grid gap-2 rounded-md border p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={mode} onChange={(event) => setMode(event.target.value as "edit" | "run")} className="w-28">
-          <option value="edit">Edit</option>
-          <option value="run">Run</option>
+        <span className="rounded-sm border border-border/80 bg-muted/70 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          {nodes.length} nodes / {edgeCount} edges
+        </span>
+        <Select value={mode} onChange={(event) => setMode(event.target.value as "edit" | "run")} className="w-[92px]">
+          <option value="edit">Edit Mode</option>
+          <option value="run">Run Mode</option>
         </Select>
         <Button variant={tool === "select" ? "default" : "secondary"} onClick={() => setTool("select")}>Select/Move</Button>
         <Button variant={tool === "add-node" ? "default" : "secondary"} onClick={() => setTool("add-node")}>Add Node</Button>
         <Button variant={tool === "connect" ? "default" : "secondary"} onClick={() => setTool("connect")}>Connect Edge</Button>
         <Button variant={tool === "delete" ? "destructive" : "secondary"} onClick={() => setTool("delete")}>Delete</Button>
         <Button variant={beginnerMode ? "default" : "outline"} onClick={() => setBeginnerMode(!beginnerMode)}>
-          Beginner Mode
+          Guide
         </Button>
 
         <div className="ml-auto flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowUtilities((prev) => !prev)}>
+            {showUtilities ? "Hide Utilities" : "Show Utilities"}
+          </Button>
           <ThemeToggle />
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">Source</span>
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/65 pt-2">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Source</span>
         <Select
           value={sourceId}
           onChange={(event) => {
@@ -155,7 +163,7 @@ export function ControlBar() {
           ))}
         </Select>
 
-        <span className="text-sm text-muted-foreground">Sink</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Sink</span>
         <Select
           value={sinkId}
           onChange={(event) => {
@@ -179,15 +187,15 @@ export function ControlBar() {
         <Button variant={showMinCut ? "default" : "outline"} onClick={() => setShowMinCut(!showMinCut)}>Show Min Cut</Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/65 pt-2">
         <Button variant="outline" onClick={jumpStart}>Jump Start</Button>
         <Button variant="outline" onClick={stepBack}>Step Back</Button>
         <Button variant="outline" onClick={stepForward}>Step</Button>
         <Button variant="outline" onClick={isPlaying ? pause : play}>{isPlaying ? "Pause" : "Play"}</Button>
         <Button variant="outline" onClick={jumpEnd}>Jump End</Button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Speed</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Speed</span>
           <Input
             type="range"
             min={0.25}
@@ -195,24 +203,28 @@ export function ControlBar() {
             step={0.25}
             value={playbackSpeed}
             onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
-            className="h-9 w-36"
+            className="h-8 w-36"
           />
-          <span className="w-10 text-sm">{playbackSpeed.toFixed(2)}x</span>
+          <span className="w-12 text-sm">{playbackSpeed.toFixed(2)}x</span>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" onClick={loadBlankGraph}>New Blank</Button>
-        <Button variant="secondary" onClick={loadDefaultExample}>Load Default Demo</Button>
-        <Button variant="outline" onClick={loadAmlExample}>Load AML Demo</Button>
-        <Button variant="outline" onClick={onExport}>Export JSON</Button>
-        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Import JSON</Button>
-        <Button variant="outline" onClick={onShare}>Share URL</Button>
-
+      {showUtilities ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/65 pt-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Utilities</span>
+          <Button variant="outline" onClick={loadBlankGraph}>New Blank</Button>
+          <Button variant="secondary" onClick={loadDefaultExample}>Load Default Demo</Button>
+          <Button variant="outline" onClick={loadAmlExample}>Load AML Demo</Button>
+          <Button variant="outline" onClick={onExport}>Export JSON</Button>
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Import JSON</Button>
+          <Button variant="outline" onClick={onShare}>Share URL</Button>
+          <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={onImportChange} />
+        </div>
+      ) : (
         <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={onImportChange} />
-      </div>
+      )}
 
-      <div className="text-xs text-muted-foreground">
+      <div className="border-t border-border/65 pt-2 text-[11px] uppercase tracking-[0.11em] text-muted-foreground">
         Tip: a default Edmonds-Karp demo is preloaded. Right-click canvas, nodes, or edges for fast actions.
       </div>
     </div>

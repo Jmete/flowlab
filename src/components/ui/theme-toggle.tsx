@@ -1,14 +1,20 @@
 "use client";
 
 import * as React from "react";
+import { Button } from "@/components/ui/button";
+
+const THEME_KEY = "flowlab-theme";
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = React.useState(false);
 
   React.useEffect(() => {
     const root = document.documentElement;
-    const current = root.classList.contains("dark");
-    setIsDark(current);
+    const persisted = window.localStorage.getItem(THEME_KEY);
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const useDark = persisted ? persisted === "dark" : systemPrefersDark;
+    root.classList.toggle("dark", useDark);
+    setIsDark(useDark);
   }, []);
 
   function toggleTheme() {
@@ -16,16 +22,12 @@ export function ThemeToggle() {
     const nextDark = !isDark;
     setIsDark(nextDark);
     root.classList.toggle("dark", nextDark);
+    window.localStorage.setItem(THEME_KEY, nextDark ? "dark" : "light");
   }
 
   return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="inline-flex h-9 items-center rounded-md border border-input px-3 text-sm"
-      aria-label="Toggle theme"
-    >
-      {isDark ? "Light" : "Dark"}
-    </button>
+    <Button type="button" onClick={toggleTheme} variant="outline" size="sm" aria-label="Toggle theme">
+      Theme {isDark ? "Dark" : "Light"}
+    </Button>
   );
 }

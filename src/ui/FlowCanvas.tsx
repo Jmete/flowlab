@@ -73,12 +73,14 @@ function FlowCanvasInner() {
     addNode,
     addEdge,
     moveNode,
+    renameNode,
     selectNode,
     selectEdge,
     clearSelection,
     setConnectFromNode,
     deleteNode,
     deleteEdge,
+    updateEdgeCapacity,
     setNodeRole,
     setTool,
   } = useFlowLabStore(
@@ -95,18 +97,21 @@ function FlowCanvasInner() {
       addNode: state.addNode,
       addEdge: state.addEdge,
       moveNode: state.moveNode,
+      renameNode: state.renameNode,
       selectNode: state.selectNode,
       selectEdge: state.selectEdge,
       clearSelection: state.clearSelection,
       setConnectFromNode: state.setConnectFromNode,
       deleteNode: state.deleteNode,
       deleteEdge: state.deleteEdge,
+      updateEdgeCapacity: state.updateEdgeCapacity,
       setNodeRole: state.setNodeRole,
       setTool: state.setTool,
     })),
   );
 
   const { screenToFlowPosition, fitView } = useReactFlow();
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [menu, setMenu] = React.useState<MenuState | null>(null);
   const isDraggingRef = React.useRef(false);
 
@@ -135,23 +140,24 @@ function FlowCanvasInner() {
         selectable: true,
         style: {
           border: isSource
-            ? "2px solid #14b8a6"
+            ? "2px solid hsl(var(--node-source))"
             : isSink
-              ? "2px solid #f59e0b"
+              ? "2px solid hsl(var(--node-sink))"
               : isConnectStart
-                ? "2px solid #38bdf8"
-                : "1px solid rgba(100,116,139,0.7)",
-          background: isCutReachable ? "rgba(34,197,94,0.12)" : "var(--card)",
-          borderRadius: "10px",
+                ? "2px solid hsl(var(--node-connect))"
+                : "1px solid hsl(var(--border))",
+          background: isCutReachable ? "hsl(var(--primary) / 0.14)" : "hsl(var(--card) / 0.95)",
+          borderRadius: "6px",
           padding: "8px 10px",
           minWidth: 68,
-          color: "var(--foreground)",
+          color: "hsl(var(--card-foreground))",
           boxShadow: isSelected
-            ? "0 0 0 2px rgba(59,130,246,0.55)"
+            ? "0 0 0 2px hsl(var(--primary) / 0.62)"
             : isHighlighted
-              ? "0 0 0 2px rgba(245,158,11,0.65)"
+              ? "0 0 0 2px hsl(var(--edge-highlight) / 0.75)"
               : "none",
           fontWeight: isSource || isSink ? 700 : 600,
+          letterSpacing: "0.02em",
         },
       };
     });
@@ -171,12 +177,13 @@ function FlowCanvasInner() {
         label: `${edge.flow} / ${edge.capacity}`,
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isCutEdge ? "#ef4444" : isHighlighted ? "#f59e0b" : "#64748b",
+          color: isCutEdge ? "hsl(var(--edge-cut))" : isHighlighted ? "hsl(var(--edge-highlight))" : "hsl(var(--edge-base))",
         },
         style: {
           strokeWidth: width,
-          stroke: isCutEdge ? "#ef4444" : isHighlighted ? "#f59e0b" : "#64748b",
+          stroke: isCutEdge ? "hsl(var(--edge-cut))" : isHighlighted ? "hsl(var(--edge-highlight))" : "hsl(var(--edge-base))",
         },
+        interactionWidth: 22,
         animated: isHighlighted && isPlaying,
         type: "smoothstep",
       } as RFEdge;
@@ -193,12 +200,12 @@ function FlowCanvasInner() {
       label: `r=${edge.residualCapacity}`,
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: edge.isReverse ? "#0ea5e9" : "#10b981",
+        color: edge.isReverse ? "hsl(var(--accent))" : "hsl(var(--primary))",
       },
       style: {
         strokeWidth: 1.6,
         strokeDasharray: edge.isReverse ? "6 5" : "4 4",
-        stroke: edge.isReverse ? "#0ea5e9" : "#10b981",
+        stroke: edge.isReverse ? "hsl(var(--accent))" : "hsl(var(--primary))",
       },
       type: "smoothstep",
       animated: isPlaying,
@@ -281,6 +288,24 @@ function FlowCanvasInner() {
     [completeEdgeCreation, connectFromNodeId, deleteNode, mode, selectNode, setConnectFromNode, tool],
   );
 
+  const editNodeLabel = React.useCallback(
+    (nodeId: NodeID) => {
+      if (mode !== "edit") {
+        return;
+      }
+      const current = graph.nodes[nodeId];
+      if (!current) {
+        return;
+      }
+      const nextLabel = window.prompt("Node label", current.label);
+      if (nextLabel === null) {
+        return;
+      }
+      renameNode(nodeId, nextLabel);
+    },
+    [graph.nodes, mode, renameNode],
+  );
+
   const onEdgeClick = React.useCallback(
     (_event: React.MouseEvent, edge: RFEdge) => {
       setMenu(null);
@@ -294,6 +319,34 @@ function FlowCanvasInner() {
       selectEdge(edge.id as EdgeID);
     },
     [deleteEdge, mode, selectEdge, tool],
+  );
+
+  const editEdgeCapacity = React.useCallback(
+    (edgeId: EdgeID) => {
+      if (mode !== "edit") {
+        return;
+      }
+      const current = graph.edges[edgeId];
+      if (!current) {
+        return;
+      }
+      const nextCapacity = parseEdgeCapacity(current.capacity);
+      if (nextCapacity === null) {
+        return;
+      }
+      updateEdgeCapacity(edgeId, nextCapacity);
+    },
+    [graph.edges, mode, updateEdgeCapacity],
+  );
+
+  const onEdgeDoubleClick = React.useCallback(
+    (_event: React.MouseEvent, edge: RFEdge) => {
+      if (edge.id.startsWith("res:")) {
+        return;
+      }
+      editEdgeCapacity(edge.id as EdgeID);
+    },
+    [editEdgeCapacity],
   );
 
   const onConnect = React.useCallback(
@@ -324,11 +377,14 @@ function FlowCanvasInner() {
         return;
       }
       event.preventDefault();
+      const rect = containerRef.current?.getBoundingClientRect();
+      const localX = rect ? event.clientX - rect.left : event.clientX;
+      const localY = rect ? event.clientY - rect.top : event.clientY;
       const flowPosition = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       setMenu({
         kind: "pane",
-        x: event.clientX,
-        y: event.clientY,
+        x: localX,
+        y: localY,
         canvasX: flowPosition.x,
         canvasY: flowPosition.y,
       });
@@ -342,8 +398,11 @@ function FlowCanvasInner() {
         return;
       }
       event.preventDefault();
+      const rect = containerRef.current?.getBoundingClientRect();
+      const localX = rect ? event.clientX - rect.left : event.clientX;
+      const localY = rect ? event.clientY - rect.top : event.clientY;
       selectNode(node.id as NodeID);
-      setMenu({ kind: "node", x: event.clientX, y: event.clientY, nodeId: node.id as NodeID });
+      setMenu({ kind: "node", x: localX, y: localY, nodeId: node.id as NodeID });
     },
     [mode, selectNode],
   );
@@ -354,8 +413,11 @@ function FlowCanvasInner() {
         return;
       }
       event.preventDefault();
+      const rect = containerRef.current?.getBoundingClientRect();
+      const localX = rect ? event.clientX - rect.left : event.clientX;
+      const localY = rect ? event.clientY - rect.top : event.clientY;
       selectEdge(edge.id as EdgeID);
-      setMenu({ kind: "edge", x: event.clientX, y: event.clientY, edgeId: edge.id as EdgeID });
+      setMenu({ kind: "edge", x: localX, y: localY, edgeId: edge.id as EdgeID });
     },
     [mode, selectEdge],
   );
@@ -421,7 +483,7 @@ function FlowCanvasInner() {
   }, []);
 
   return (
-    <div className={cn("relative h-full w-full overflow-hidden rounded-2xl border border-white/30 bg-card/80 shadow-sm")}> 
+    <div ref={containerRef} className={cn("panel-shell relative h-full w-full overflow-hidden rounded-md border shadow-[0_16px_36px_hsl(var(--background)/0.32)]")}>
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -438,6 +500,7 @@ function FlowCanvasInner() {
         onPaneClick={onPaneClick}
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
+        onEdgeDoubleClick={onEdgeDoubleClick}
         onConnect={onConnect}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
@@ -450,19 +513,19 @@ function FlowCanvasInner() {
         deleteKeyCode={null}
         proOptions={{ hideAttribution: true }}
       >
-        <Background gap={22} size={1} />
+        <Background gap={24} size={1} color="hsl(var(--grid-line))" />
         <Controls />
       </ReactFlow>
 
       {connectFromNodeId ? (
-        <div className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-700 dark:text-sky-300">
+        <div className="pointer-events-none absolute bottom-3 left-3 rounded-sm border border-primary/40 bg-primary/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.09em] text-foreground">
           Select a target node to connect from {graph.nodes[connectFromNodeId]?.label ?? connectFromNodeId}
         </div>
       ) : null}
 
       {menu ? (
         <div
-          className="absolute z-20 min-w-[190px] rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          className="panel-shell absolute z-20 min-w-[206px] rounded-sm border p-1.5 shadow-xl"
           style={{ left: menu.x, top: menu.y }}
           onClick={(event) => event.stopPropagation()}
         >
@@ -470,7 +533,7 @@ function FlowCanvasInner() {
             <>
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                 onClick={() => {
                   addNode(menu.canvasX - 32, menu.canvasY - 16);
                   setMenu(null);
@@ -480,7 +543,7 @@ function FlowCanvasInner() {
               </button>
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                 onClick={() => {
                   fitView({ duration: 180, padding: 0.18 });
                   setMenu(null);
@@ -495,7 +558,17 @@ function FlowCanvasInner() {
             <>
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
+                onClick={() => {
+                  editNodeLabel(menu.nodeId);
+                  setMenu(null);
+                }}
+              >
+                Edit label
+              </button>
+              <button
+                type="button"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                 onClick={() => {
                   setTool("connect");
                   setConnectFromNode(menu.nodeId);
@@ -507,7 +580,7 @@ function FlowCanvasInner() {
               {connectFromNodeId && connectFromNodeId !== menu.nodeId ? (
                 <button
                   type="button"
-                  className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                  className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                   onClick={() => {
                     completeEdgeCreation(menu.nodeId);
                     setMenu(null);
@@ -518,7 +591,7 @@ function FlowCanvasInner() {
               ) : null}
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                 onClick={() => {
                   setNodeRole(menu.nodeId, "source");
                   setMenu(null);
@@ -528,7 +601,7 @@ function FlowCanvasInner() {
               </button>
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
                 onClick={() => {
                   setNodeRole(menu.nodeId, "sink");
                   setMenu(null);
@@ -538,7 +611,7 @@ function FlowCanvasInner() {
               </button>
               <button
                 type="button"
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-destructive hover:bg-destructive/12"
                 onClick={() => {
                   deleteNode(menu.nodeId);
                   setMenu(null);
@@ -550,16 +623,28 @@ function FlowCanvasInner() {
           ) : null}
 
           {menu.kind === "edge" ? (
-            <button
-              type="button"
-              className="w-full rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-              onClick={() => {
-                deleteEdge(menu.edgeId);
-                setMenu(null);
-              }}
-            >
-              Delete edge
-            </button>
+            <>
+              <button
+                type="button"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
+                onClick={() => {
+                  editEdgeCapacity(menu.edgeId);
+                  setMenu(null);
+                }}
+              >
+                Edit capacity
+              </button>
+              <button
+                type="button"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-destructive hover:bg-destructive/12"
+                onClick={() => {
+                  deleteEdge(menu.edgeId);
+                  setMenu(null);
+                }}
+              >
+                Delete edge
+              </button>
+            </>
           ) : null}
         </div>
       ) : null}
