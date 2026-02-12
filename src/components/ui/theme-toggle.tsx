@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 const THEME_KEY = "flowlab-theme";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = React.useState(false);
+  const [isDark, setIsDark] = React.useState(true);
 
   React.useEffect(() => {
     const root = document.documentElement;
     const persisted = window.localStorage.getItem(THEME_KEY);
-    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const useDark = persisted ? persisted === "dark" : systemPrefersDark;
+    const useDark = persisted ? persisted === "dark" : true;
     root.classList.toggle("dark", useDark);
     setIsDark(useDark);
   }, []);
