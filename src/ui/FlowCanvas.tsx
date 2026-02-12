@@ -7,6 +7,7 @@ import {
   ConnectionLineType,
   Controls,
   MarkerType,
+  Position,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
@@ -83,6 +84,7 @@ function FlowCanvasInner() {
     updateEdgeCapacity,
     setNodeRole,
     setTool,
+    autoTidyLayout,
   } = useFlowLabStore(
     useShallow((state) => ({
       graph: state.graph,
@@ -107,6 +109,7 @@ function FlowCanvasInner() {
       updateEdgeCapacity: state.updateEdgeCapacity,
       setNodeRole: state.setNodeRole,
       setTool: state.setTool,
+      autoTidyLayout: state.autoTidyLayout,
     })),
   );
 
@@ -136,6 +139,8 @@ function FlowCanvasInner() {
         id: node.id,
         position: { x: node.x, y: node.y },
         data: { label: node.label },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
         draggable: mode === "edit",
         selectable: true,
         style: {
@@ -147,9 +152,9 @@ function FlowCanvasInner() {
                 ? "2px solid hsl(var(--node-connect))"
                 : "1px solid hsl(var(--border))",
           background: isCutReachable ? "hsl(var(--primary) / 0.14)" : "hsl(var(--card) / 0.95)",
-          borderRadius: "6px",
-          padding: "8px 10px",
-          minWidth: 68,
+          borderRadius: "8px",
+          padding: "10px 14px",
+          minWidth: 96,
           color: "hsl(var(--card-foreground))",
           boxShadow: isSelected
             ? "0 0 0 2px hsl(var(--primary) / 0.62)"
@@ -186,6 +191,10 @@ function FlowCanvasInner() {
         interactionWidth: 22,
         animated: isHighlighted && isPlaying,
         type: "smoothstep",
+        pathOptions: {
+          offset: 26,
+          borderRadius: 14,
+        },
       } as RFEdge;
     });
 
@@ -208,6 +217,10 @@ function FlowCanvasInner() {
         stroke: edge.isReverse ? "hsl(var(--accent))" : "hsl(var(--primary))",
       },
       type: "smoothstep",
+      pathOptions: {
+        offset: 26,
+        borderRadius: 14,
+      },
       animated: isPlaying,
     }));
 
@@ -483,10 +496,12 @@ function FlowCanvasInner() {
   }, []);
 
   return (
-    <div ref={containerRef} className={cn("panel-shell relative h-full w-full overflow-hidden rounded-md border shadow-[0_16px_36px_hsl(var(--background)/0.32)]")}>
+    <div ref={containerRef} className={cn("panel-shell relative h-full w-full overflow-hidden rounded-md border")}>
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
+        fitView
+        fitViewOptions={{ padding: 0.14, duration: 220 }}
         onNodesChange={handleNodesChange}
         onEdgesChange={onRfEdgesChange}
         onlyRenderVisibleElements
@@ -540,6 +555,16 @@ function FlowCanvasInner() {
                 }}
               >
                 Add node here
+              </button>
+              <button
+                type="button"
+                className="w-full rounded-sm px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] hover:bg-muted"
+                onClick={() => {
+                  autoTidyLayout();
+                  setMenu(null);
+                }}
+              >
+                Auto tidy layout
               </button>
               <button
                 type="button"

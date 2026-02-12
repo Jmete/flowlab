@@ -97,6 +97,7 @@ interface FlowLabState {
   loadAmlExample: () => void;
   loadBlankGraph: () => void;
   importGraph: (graph: Graph, warnings?: string[]) => void;
+  autoTidyLayout: () => void;
 }
 
 function createNodeId(graph: Graph): string {
@@ -126,6 +127,110 @@ function createEdgeId(graph: Graph): string {
 
 function graphSnapshot(graph: Graph): Graph {
   return cloneGraph(graph);
+}
+
+function findOpenNodePosition(graph: Graph, x: number, y: number): { x: number; y: number } {
+  const minDistance = 115;
+  const ringStep = 36;
+  const maxAttempts = 40;
+
+  let candidateX = x;
+  let candidateY = y;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const hasConflict = Object.values(graph.nodes).some((node) => {
+      return Math.hypot(node.x - candidateX, node.y - candidateY) < minDistance;
+    });
+
+    if (!hasConflict) {
+      return { x: candidateX, y: candidateY };
+    }
+
+    const angle = ((attempt * 137.5) / 180) * Math.PI;
+    const radius = ringStep * Math.ceil((attempt + 1) / 4);
+    candidateX = x + Math.cos(angle) * radius;
+    candidateY = y + Math.sin(angle) * radius;
+  }
+
+  return { x, y };
+}
+
+function computeAutoLayoutPositions(graph: Graph): Record<NodeID, { x: number; y: number }> {
+  const nodes = Object.values(graph.nodes);
+  if (nodes.length === 0) {
+    return {};
+  }
+
+  const sortedByX = [...nodes].sort((a, b) => a.x - b.x || a.y - b.y || a.id.localeCompare(b.id));
+  const sourceId = nodes.find((node) => node.role === "source")?.id ?? sortedByX[0].id;
+  const outgoing = new Map<NodeID, NodeID[]>();
+  for (const node of nodes) {
+    outgoing.set(node.id, []);
+  }
+  for (const edge of Object.values(graph.edges)) {
+    outgoing.get(edge.from)?.push(edge.to);
+  }
+
+  // Assign breadth levels from source, then place disconnected nodes by existing x-order.
+  const levelByNode = new Map<NodeID, number>();
+  const queue: NodeID[] = [sourceId];
+  levelByNode.set(sourceId, 0);
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
+    const nextLevel = (levelByNode.get(current) ?? 0) + 1;
+    for (const target of outgoing.get(current) ?? []) {
+      if (levelByNode.has(target)) {
+        continue;
+      }
+      levelByNode.set(target, nextLevel);
+      queue.push(target);
+    }
+  }
+
+  const minX = sortedByX[0].x;
+  for (const node of sortedByX) {
+    if (levelByNode.has(node.id)) {
+      continue;
+    }
+    const approximateLevel = Math.max(1, Math.round((node.x - minX) / 220));
+    levelByNode.set(node.id, approximateLevel);
+  }
+
+  const uniqueLevels = [...new Set(levelByNode.values())].sort((a, b) => a - b);
+  const compactLevel = new Map<number, number>(uniqueLevels.map((level, index) => [level, index]));
+  for (const node of nodes) {
+    const current = levelByNode.get(node.id) ?? 0;
+    levelByNode.set(node.id, compactLevel.get(current) ?? 0);
+  }
+
+  const levelToNodes = new Map<number, Node[]>();
+  for (const node of nodes) {
+    const level = levelByNode.get(node.id) ?? 0;
+    const bucket = levelToNodes.get(level) ?? [];
+    bucket.push(node);
+    levelToNodes.set(level, bucket);
+  }
+
+  const horizontalGap = 240;
+  const verticalGap = 125;
+  const startX = Math.min(...nodes.map((node) => node.x));
+  const centerY = nodes.reduce((total, node) => total + node.y, 0) / nodes.length;
+  const positions: Record<NodeID, { x: number; y: number }> = {};
+
+  for (const [level, bucket] of [...levelToNodes.entries()].sort((a, b) => a[0] - b[0])) {
+    const orderedBucket = bucket.sort((a, b) => a.y - b.y || a.id.localeCompare(b.id));
+    const startY = centerY - ((orderedBucket.length - 1) * verticalGap) / 2;
+    for (let index = 0; index < orderedBucket.length; index += 1) {
+      const node = orderedBucket[index];
+      positions[node.id] = {
+        x: startX + level * horizontalGap,
+        y: Math.max(60, startY + index * verticalGap),
+      };
+    }
+  }
+
+  return positions;
 }
 
 function resetPlayback(graph: Graph) {
@@ -196,12 +301,13 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   addNode: (x, y) =>
     set((state) =>
       applyGraphMutation(state, (graph) => {
+        const position = findOpenNodePosition(graph, x, y);
         const id = createNodeId(graph);
         graph.nodes[id] = {
           id,
           label: createNodeLabel(graph),
-          x,
-          y,
+          x: position.x,
+          y: position.y,
           role: "normal",
         };
       }),
@@ -593,6 +699,21 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
       warnings,
     });
   },
+
+  autoTidyLayout: () =>
+    set((state) =>
+      applyGraphMutation(state, (graph) => {
+        const nextPositions = computeAutoLayoutPositions(graph);
+        for (const node of Object.values(graph.nodes)) {
+          const next = nextPositions[node.id];
+          if (!next) {
+            continue;
+          }
+          node.x = Math.round(next.x);
+          node.y = Math.round(next.y);
+        }
+      }),
+    ),
 }));
 
 export function getSelectedNode(state: FlowLabState): Node | undefined {

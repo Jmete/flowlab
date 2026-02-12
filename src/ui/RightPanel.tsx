@@ -9,16 +9,17 @@ import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { withFlowOverrides } from "@/models/graph";
 import { getEdgesWithFlow, useFlowLabStore } from "@/state/store";
-import { BeginnerModePanel } from "@/ui/BeginnerModePanel";
 import { formatFlowEvent } from "@/ui/logFormatters";
 
 export function RightPanel() {
   const [tab, setTab] = React.useState("properties");
+  const lastAutoResultsEventsRef = React.useRef<typeof events | null>(null);
 
   const {
     graph,
     selection,
     events,
+    isPlaying,
     playback,
     maxFlowValue,
     minCut,
@@ -34,6 +35,7 @@ export function RightPanel() {
       graph: state.graph,
       selection: state.selection,
       events: state.events,
+      isPlaying: state.isPlaying,
       playback: state.playback,
       maxFlowValue: state.maxFlowValue,
       minCut: state.minCut,
@@ -85,13 +87,22 @@ export function RightPanel() {
     }
   }, [selection.edgeId, selection.nodeId]);
 
+  React.useEffect(() => {
+    const runComplete = events.length > 0 && playback.cursor >= events.length - 1 && !playback.isRunning;
+    if (!runComplete || isPlaying || lastAutoResultsEventsRef.current === events) {
+      return;
+    }
+
+    lastAutoResultsEventsRef.current = events;
+    setTab("results");
+  }, [events, isPlaying, playback.cursor, playback.isRunning]);
+
   return (
     <Card className="flex h-full min-h-0 flex-col overflow-hidden">
       <CardHeader className="border-b border-border/60 pb-3">
         <CardTitle>Inspector</CardTitle>
       </CardHeader>
       <CardContent className="min-h-0 flex-1 overflow-y-auto">
-        <BeginnerModePanel />
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
             <TabsTrigger value="properties">Properties</TabsTrigger>

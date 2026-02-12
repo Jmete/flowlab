@@ -1,13 +1,13 @@
 {
   "nodes": {
-    "s": { "id": "s", "label": "Incoming Applications", "x": 80, "y": 230, "role": "source" },
-    "review": { "id": "review", "label": "Resume Review", "x": 230, "y": 230, "role": "normal" },
-    "mia": { "id": "mia", "label": "Recruiter Mia", "x": 410, "y": 120, "role": "normal" },
-    "noah": { "id": "noah", "label": "Recruiter Noah", "x": 410, "y": 230, "role": "normal" },
-    "zoe": { "id": "zoe", "label": "Recruiter Zoe", "x": 410, "y": 340, "role": "normal" },
-    "hm": { "id": "hm", "label": "Hiring Manager Interview", "x": 620, "y": 185, "role": "normal" },
-    "offer": { "id": "offer", "label": "Offer Approval", "x": 620, "y": 300, "role": "normal" },
-    "t": { "id": "t", "label": "Candidates Placed", "x": 800, "y": 240, "role": "sink" }
+    "s": { "id": "s", "label": "Incoming Applications", "x": 120, "y": 110, "role": "source" },
+    "review": { "id": "review", "label": "Resume Review", "x": 140, "y": 325, "role": "normal" },
+    "mia": { "id": "mia", "label": "Recruiter Mia", "x": 500, "y": 210, "role": "normal" },
+    "noah": { "id": "noah", "label": "Recruiter Noah", "x": 500, "y": 320, "role": "normal" },
+    "zoe": { "id": "zoe", "label": "Recruiter Zoe", "x": 500, "y": 430, "role": "normal" },
+    "hm": { "id": "hm", "label": "Hiring Manager Interview", "x": 980, "y": 260, "role": "normal" },
+    "offer": { "id": "offer", "label": "Offer Approval", "x": 1000, "y": 410, "role": "normal" },
+    "t": { "id": "t", "label": "Candidates Placed", "x": 1350, "y": 410, "role": "sink" }
   },
   "edges": {
     "e1": { "id": "e1", "from": "s", "to": "review", "capacity": 18, "flow": 0, "directed": true },
