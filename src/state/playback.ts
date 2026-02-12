@@ -92,20 +92,31 @@ export function applyFlowEvent(state: PlaybackState, event: FlowEvent): Playback
     }
     case "NO_MORE_PATHS": {
       next.currentMaxFlow = event.maxFlow;
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      next.lastAugmentingPath = undefined;
       break;
     }
     case "MINCUT_COMPUTED": {
       next.reachableCut = new Set(event.reachable);
       next.cutEdges = new Set(event.cutEdges);
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      next.lastAugmentingPath = undefined;
       break;
     }
     case "RUN_END": {
       next.isRunning = false;
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      next.lastAugmentingPath = undefined;
       break;
     }
     case "ERROR": {
       next.isRunning = false;
       next.error = event.message;
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
       break;
     }
     case "RESIDUAL_BUILT": {

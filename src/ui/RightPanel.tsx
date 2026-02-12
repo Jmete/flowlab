@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { withFlowOverrides } from "@/models/graph";
 import { getEdgesWithFlow, useFlowLabStore } from "@/state/store";
+import { BeginnerModePanel } from "@/ui/BeginnerModePanel";
 import { formatFlowEvent } from "@/ui/logFormatters";
 
 export function RightPanel() {
@@ -70,6 +71,7 @@ export function RightPanel() {
         <CardTitle className="text-base">Inspector</CardTitle>
       </CardHeader>
       <CardContent>
+        <BeginnerModePanel />
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full">
             <TabsTrigger value="properties">Properties</TabsTrigger>

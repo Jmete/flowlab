@@ -45,6 +45,7 @@ interface FlowLabState {
   connectFromNodeId?: NodeID;
   showResidual: boolean;
   showMinCut: boolean;
+  beginnerMode: boolean;
   events: FlowEvent[];
   playback: PlaybackState;
   playbackCache: PlaybackCache;
@@ -90,6 +91,7 @@ interface FlowLabState {
 
   setShowResidual: (enabled: boolean) => void;
   setShowMinCut: (enabled: boolean) => void;
+  setBeginnerMode: (enabled: boolean) => void;
 
   loadDefaultExample: () => void;
   loadAmlExample: () => void;
@@ -175,6 +177,7 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   selection: {},
   showResidual: false,
   showMinCut: false,
+  beginnerMode: true,
   events: [],
   playback: initialPlaybackState,
   playbackCache: initialPlaybackCache,
@@ -429,11 +432,12 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
     if (state.events.length === 0) {
       return;
     }
+    stopTimer(state.playbackTimer);
 
     const nextCursor = Math.min(state.events.length - 1, state.playback.cursor + 1);
     const playback = computePlaybackAtCursor(state.events, state.playbackCache, nextCursor);
 
-    set({ playback });
+    set({ playback, isPlaying: false, playbackTimer: undefined });
   },
 
   stepBack: () => {
@@ -441,17 +445,19 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
     if (state.events.length === 0) {
       return;
     }
+    stopTimer(state.playbackTimer);
 
     const nextCursor = Math.max(-1, state.playback.cursor - 1);
     const playback = computePlaybackAtCursor(state.events, state.playbackCache, nextCursor);
 
-    set({ playback });
+    set({ playback, isPlaying: false, playbackTimer: undefined });
   },
 
   jumpStart: () => {
     const state = get();
+    stopTimer(state.playbackTimer);
     const playback = computePlaybackAtCursor(state.events, state.playbackCache, -1);
-    set({ playback, isPlaying: false });
+    set({ playback, isPlaying: false, playbackTimer: undefined });
   },
 
   jumpEnd: () => {
@@ -459,8 +465,9 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
     if (state.events.length === 0) {
       return;
     }
+    stopTimer(state.playbackTimer);
     const playback = computePlaybackAtCursor(state.events, state.playbackCache, state.events.length - 1);
-    set({ playback, isPlaying: false });
+    set({ playback, isPlaying: false, playbackTimer: undefined });
   },
 
   play: () => {
@@ -468,15 +475,26 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
     if (state.events.length === 0 || state.isPlaying) {
       return;
     }
+    stopTimer(state.playbackTimer);
+
+    // If already at the end, restart from the beginning before autoplay.
+    if (state.playback.cursor >= state.events.length - 1) {
+      const restart = computePlaybackAtCursor(state.events, state.playbackCache, -1);
+      set({ playback: restart });
+    }
 
     const delay = Math.max(45, Math.trunc(220 / Math.max(0.25, state.playbackSpeed)));
     const timer = window.setInterval(() => {
-      const current = get();
-      if (current.playback.cursor >= current.events.length - 1) {
-        current.pause();
-        return;
-      }
-      current.stepForward();
+      set((current) => {
+        if (current.playback.cursor >= current.events.length - 1) {
+          stopTimer(current.playbackTimer);
+          return { isPlaying: false, playbackTimer: undefined };
+        }
+
+        const nextCursor = Math.min(current.events.length - 1, current.playback.cursor + 1);
+        const playback = computePlaybackAtCursor(current.events, current.playbackCache, nextCursor);
+        return { playback };
+      });
     }, delay);
 
     set({ isPlaying: true, playbackTimer: timer });
@@ -500,6 +518,7 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
 
   setShowResidual: (enabled) => set({ showResidual: enabled }),
   setShowMinCut: (enabled) => set({ showMinCut: enabled }),
+  setBeginnerMode: (enabled) => set({ beginnerMode: enabled }),
 
   loadDefaultExample: () => {
     const graph = defaultExample as Graph;

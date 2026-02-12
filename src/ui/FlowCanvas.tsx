@@ -13,6 +13,7 @@ import {
   useNodesState,
   useReactFlow,
   type Connection,
+  type NodeChange,
   type Edge as RFEdge,
   type Node as RFNode,
 } from "@xyflow/react";
@@ -359,10 +360,6 @@ function FlowCanvasInner() {
     [mode, selectEdge],
   );
 
-  const onNodeDragStart = React.useCallback(() => {
-    isDraggingRef.current = true;
-  }, []);
-
   const onNodeDragStop = React.useCallback(
     (_event: React.MouseEvent, node: RFNode) => {
       isDraggingRef.current = false;
@@ -372,6 +369,23 @@ function FlowCanvasInner() {
       moveNode(node.id as NodeID, node.position.x, node.position.y);
     },
     [mode, moveNode],
+  );
+
+  const handleNodesChange = React.useCallback(
+    (changes: NodeChange<RFNode>[]) => {
+      for (const change of changes) {
+        if (change.type === "position") {
+          if (change.dragging === true) {
+            isDraggingRef.current = true;
+          }
+          if (change.dragging === false) {
+            isDraggingRef.current = false;
+          }
+        }
+      }
+      onRfNodesChange(changes);
+    },
+    [onRfNodesChange],
   );
 
   React.useEffect(() => {
@@ -411,7 +425,7 @@ function FlowCanvasInner() {
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
-        onNodesChange={onRfNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onRfEdgesChange}
         onlyRenderVisibleElements
         minZoom={0.25}
@@ -428,7 +442,6 @@ function FlowCanvasInner() {
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
         onEdgeContextMenu={onEdgeContextMenu}
-        onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
         connectionLineType={ConnectionLineType.SmoothStep}
         panOnDrag={tool === "select"}

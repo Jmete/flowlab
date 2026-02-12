@@ -20,6 +20,7 @@ export function ControlBar() {
     tool,
     showResidual,
     showMinCut,
+    beginnerMode,
     playbackSpeed,
     isPlaying,
     setMode,
@@ -29,6 +30,7 @@ export function ControlBar() {
     resetFlows,
     setShowResidual,
     setShowMinCut,
+    setBeginnerMode,
     stepBack,
     stepForward,
     jumpStart,
@@ -47,6 +49,7 @@ export function ControlBar() {
       tool: state.tool,
       showResidual: state.showResidual,
       showMinCut: state.showMinCut,
+      beginnerMode: state.beginnerMode,
       playbackSpeed: state.playbackSpeed,
       isPlaying: state.isPlaying,
       setMode: state.setMode,
@@ -56,6 +59,7 @@ export function ControlBar() {
       resetFlows: state.resetFlows,
       setShowResidual: state.setShowResidual,
       setShowMinCut: state.setShowMinCut,
+      setBeginnerMode: state.setBeginnerMode,
       stepBack: state.stepBack,
       stepForward: state.stepForward,
       jumpStart: state.jumpStart,
@@ -123,6 +127,9 @@ export function ControlBar() {
         <Button variant={tool === "add-node" ? "default" : "secondary"} onClick={() => setTool("add-node")}>Add Node</Button>
         <Button variant={tool === "connect" ? "default" : "secondary"} onClick={() => setTool("connect")}>Connect Edge</Button>
         <Button variant={tool === "delete" ? "destructive" : "secondary"} onClick={() => setTool("delete")}>Delete</Button>
+        <Button variant={beginnerMode ? "default" : "outline"} onClick={() => setBeginnerMode(!beginnerMode)}>
+          Beginner Mode
+        </Button>
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
