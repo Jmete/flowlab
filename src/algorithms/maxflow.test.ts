@@ -56,7 +56,8 @@ describe("runEdmondsKarp", () => {
 
     expect(result.maxFlowValue).toBe(7);
     expect(result.graph.edges.e1.flow).toBe(7);
-    expect(result.events[0]).toEqual({ type: "RUN_START", source: "s", sink: "t", timestamp: 123 });
+    expect(result.events[0]).toEqual({ type: "ALGORITHM_SELECTED", algorithm: "edmonds-karp" });
+    expect(result.events[1]).toEqual({ type: "RUN_START", source: "s", sink: "t", timestamp: 123 });
   });
 
   it("solves parallel paths", () => {

@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { readGraphFromUrlHash } from "@/lib/shareUrl";
+import { maxFlowAlgorithms, type MaxFlowAlgorithmId } from "@/models/algorithms";
 import { useFlowLabStore } from "@/state/store";
 import { normalizeImportedGraph, type Graph } from "@/models/graph";
 
@@ -13,12 +14,14 @@ export function ControlBar() {
     graph,
     events,
     mode,
+    algorithm,
     showResidual,
     showMinCut,
     playbackSpeed,
     isPlaying,
     error,
     setMode,
+    setAlgorithm,
     runMaxFlow,
     resetFlows,
     setShowResidual,
@@ -37,12 +40,14 @@ export function ControlBar() {
       graph: state.graph,
       events: state.events,
       mode: state.mode,
+      algorithm: state.algorithm,
       showResidual: state.showResidual,
       showMinCut: state.showMinCut,
       playbackSpeed: state.playbackSpeed,
       isPlaying: state.isPlaying,
       error: state.error,
       setMode: state.setMode,
+      setAlgorithm: state.setAlgorithm,
       runMaxFlow: state.runMaxFlow,
       resetFlows: state.resetFlows,
       setShowResidual: state.setShowResidual,
@@ -143,6 +148,27 @@ export function ControlBar() {
           </Button>
 
           <div className="col-span-2 flex items-center justify-between gap-2 sm:col-auto sm:ml-auto sm:justify-start">
+            <label
+              htmlFor="algorithm-selector"
+              className="text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground"
+            >
+              Algorithm
+            </label>
+            <Select
+              id="algorithm-selector"
+              value={algorithm}
+              onChange={(event) => setAlgorithm(event.target.value as MaxFlowAlgorithmId)}
+              className="w-40 text-xs"
+            >
+              {maxFlowAlgorithms.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="col-span-2 flex items-center justify-between gap-2 sm:col-auto sm:justify-start">
             <label
               htmlFor="speed-selector"
               className="text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground"

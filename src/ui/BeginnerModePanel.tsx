@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useShallow } from "zustand/react/shallow";
+import { getMaxFlowAlgorithmById } from "@/models/algorithms";
 import type { FlowEvent } from "@/models/events";
 import { useFlowLabStore } from "@/state/store";
 
@@ -9,11 +10,16 @@ function explainEvent(event?: FlowEvent): { title: string; text: string } {
   if (!event) {
     return {
       title: "Ready to Learn",
-      text: "Press Run Max Flow. Yellow highlights show the current path search, and red edges at the end show the bottleneck cut.",
+      text: "Press Run. Yellow highlights show the active search/update step, and red edges at the end show the bottleneck cut.",
     };
   }
 
   switch (event.type) {
+    case "ALGORITHM_SELECTED":
+      return {
+        title: "Algorithm Selected",
+        text: `${getMaxFlowAlgorithmById(event.algorithm).label} is active. Run to compare how it explores and updates the graph.`,
+      };
     case "RUN_START":
       return {
         title: "Run Started",
@@ -55,6 +61,31 @@ function explainEvent(event?: FlowEvent): { title: string; text: string } {
       return {
         title: "No More Paths",
         text: "No additional source-to-sink route has residual capacity, so max flow is final.",
+      };
+    case "DINIC_LEVEL_GRAPH_BUILT":
+      return {
+        title: `Dinic Phase ${event.phase}`,
+        text: `Level graph built with ${event.reachableNodes} reachable nodes. The algorithm now sends blocking flow inside this layered graph.`,
+      };
+    case "DINIC_BLOCKING_FLOW_END":
+      return {
+        title: "Blocking Flow Complete",
+        text: `Phase ${event.phase} pushed ${event.pushedFlow} total flow before rebuilding levels.`,
+      };
+    case "PUSH_RELABEL_INIT":
+      return {
+        title: "Preflow Initialized",
+        text: `Push-Relabel starts with preflow from source and ${event.activeNodes} active nodes carrying excess.`,
+      };
+    case "PUSH_RELABEL_PUSH":
+      return {
+        title: "Push Operation",
+        text: `Pushed ${event.delta} from ${event.from} to ${event.to}${event.isReverse ? " using reverse residual capacity" : ""}.`,
+      };
+    case "PUSH_RELABEL_RELABEL":
+      return {
+        title: "Relabel Operation",
+        text: `${event.node} could not push, so its height increased to ${event.newHeight} to open new admissible edges.`,
       };
     case "MINCUT_COMPUTED":
       return {

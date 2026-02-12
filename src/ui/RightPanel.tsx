@@ -69,7 +69,7 @@ export function RightPanel() {
 
   const plainLanguageSummary = React.useMemo(() => {
     if (!minCut || bottlenecks.length === 0) {
-      return "Run max-flow to see a plain-language bottleneck summary.";
+      return "Run an algorithm to see a plain-language bottleneck summary.";
     }
 
     const topEdge = bottlenecks[0];
@@ -160,7 +160,7 @@ export function RightPanel() {
 
           <TabsContent value="log">
               <div className="max-h-[60vh] space-y-1 overflow-auto rounded-sm border border-border/75 bg-[hsl(var(--panel)/0.45)] p-2 text-sm">
-              {events.length === 0 ? <div className="text-muted-foreground">Run max-flow to generate event log.</div> : null}
+              {events.length === 0 ? <div className="text-muted-foreground">Run an algorithm to generate event log.</div> : null}
               {events.map((event, index) => (
                 <div
                   key={`${event.type}-${index}`}

@@ -1,9 +1,10 @@
 "use client";
 
 import { create } from "zustand";
-import { runEdmondsKarp } from "@/algorithms/maxflow";
+import { runMaxFlowAlgorithm } from "@/algorithms/maxflow";
 import type { MinCutResult } from "@/algorithms/mincut";
 import { buildResidualGraph } from "@/algorithms/residual";
+import { defaultMaxFlowAlgorithm, type MaxFlowAlgorithmId } from "@/models/algorithms";
 import { createHistoryStack, pushHistory, redoHistory, undoHistory, type HistoryStack } from "@/state/history";
 import {
   buildPlaybackCache,
@@ -40,6 +41,7 @@ interface FlowLabState {
   graph: Graph;
   history: HistoryStack<Graph>;
   mode: AppMode;
+  algorithm: MaxFlowAlgorithmId;
   tool: EditorTool;
   selection: Selection;
   connectFromNodeId?: NodeID;
@@ -58,6 +60,7 @@ interface FlowLabState {
   playbackTimer?: number;
 
   setMode: (mode: AppMode) => void;
+  setAlgorithm: (algorithm: MaxFlowAlgorithmId) => void;
   setTool: (tool: EditorTool) => void;
   clearSelection: () => void;
   selectNode: (nodeId?: NodeID) => void;
@@ -278,6 +281,7 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   graph: initialGraph,
   history: createHistoryStack<Graph>(),
   mode: "edit",
+  algorithm: defaultMaxFlowAlgorithm,
   tool: "select",
   selection: {},
   showResidual: false,
@@ -292,6 +296,7 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
   warnings: [],
 
   setMode: (mode) => set({ mode }),
+  setAlgorithm: (algorithm) => set({ algorithm }),
   setTool: (tool) => set({ tool }),
   clearSelection: () => set({ selection: {} }),
   selectNode: (nodeId) => set({ selection: { nodeId, edgeId: undefined } }),
@@ -499,7 +504,7 @@ export const useFlowLabStore = create<FlowLabState>((set, get) => ({
     }
     const initialFlows = Object.fromEntries(Object.values(runInput.edges).map((edge) => [edge.id, edge.flow]));
 
-    const runResult = runEdmondsKarp(runInput);
+    const runResult = runMaxFlowAlgorithm(state.algorithm, runInput);
     const playbackState = createInitialPlaybackState(initialFlows);
     const playbackCache = buildPlaybackCache(runResult.events, playbackState);
 

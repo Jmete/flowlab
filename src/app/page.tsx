@@ -3,6 +3,7 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getMaxFlowAlgorithmById } from "@/models/algorithms";
 import { useLoadFromHashOnBoot } from "@/ui/ControlBar";
 import { useFlowLabStore } from "@/state/store";
 
@@ -25,6 +26,8 @@ export default function HomePage() {
   useLoadFromHashOnBoot();
 
   const isPlaying = useFlowLabStore((state) => state.isPlaying);
+  const algorithm = useFlowLabStore((state) => state.algorithm);
+  const algorithmLabel = getMaxFlowAlgorithmById(algorithm).label;
 
   return (
     <main className="h-full min-h-screen p-2 sm:p-3">
@@ -33,7 +36,7 @@ export default function HomePage() {
           <div>
             <h1 className="text-base font-semibold uppercase tracking-[0.16em]">FlowLab</h1>
             <p className="text-[11px] uppercase tracking-[0.11em] text-muted-foreground">
-              Edmonds-Karp Max Flow - Find Bottlenecks
+              {algorithmLabel} Max Flow - Find Bottlenecks
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">

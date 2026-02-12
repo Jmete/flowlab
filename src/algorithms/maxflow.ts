@@ -1,5 +1,9 @@
-import { computeMinCut, type MinCutResult } from "@/algorithms/mincut";
+import { runDinic } from "@/algorithms/dinic";
 import { buildResidualGraph, type ResidualEdge } from "@/algorithms/residual";
+import { runPushRelabel } from "@/algorithms/pushRelabel";
+import type { MaxFlowRunOptions, MaxFlowRunResult } from "@/algorithms/types";
+import type { MaxFlowAlgorithmId } from "@/models/algorithms";
+import { computeMinCut } from "@/algorithms/mincut";
 import { cloneGraph, getSourceSinkIds, validateGraphForRun, type Graph } from "@/models/graph";
 import type { FlowEvent } from "@/models/events";
 
@@ -8,21 +12,11 @@ interface ParentEntry {
   via: ResidualEdge;
 }
 
-export interface MaxFlowRunOptions {
-  maxSteps?: number;
-  timestampFactory?: () => number;
-}
-
-export interface MaxFlowRunResult {
-  maxFlowValue: number;
-  graph: Graph;
-  events: FlowEvent[];
-  minCut?: MinCutResult;
-}
+export type { MaxFlowRunOptions, MaxFlowRunResult } from "@/algorithms/types";
 
 export function runEdmondsKarp(inputGraph: Graph, options: MaxFlowRunOptions = {}): MaxFlowRunResult {
   const graph = cloneGraph(inputGraph);
-  const events: FlowEvent[] = [];
+  const events: FlowEvent[] = [{ type: "ALGORITHM_SELECTED", algorithm: "edmonds-karp" }];
 
   const now = options.timestampFactory ?? (() => Date.now());
   const maxSteps = options.maxSteps ?? 50000;
@@ -204,4 +198,21 @@ export function runEdmondsKarp(inputGraph: Graph, options: MaxFlowRunOptions = {
     events,
     minCut,
   };
+}
+
+export function runMaxFlowAlgorithm(
+  algorithm: MaxFlowAlgorithmId,
+  inputGraph: Graph,
+  options: MaxFlowRunOptions = {},
+): MaxFlowRunResult {
+  switch (algorithm) {
+    case "edmonds-karp":
+      return runEdmondsKarp(inputGraph, options);
+    case "dinic":
+      return runDinic(inputGraph, options);
+    case "push-relabel":
+      return runPushRelabel(inputGraph, options);
+    default:
+      return runEdmondsKarp(inputGraph, options);
+  }
 }

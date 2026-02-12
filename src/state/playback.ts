@@ -53,6 +53,12 @@ export function applyFlowEvent(state: PlaybackState, event: FlowEvent): Playback
   const next = clonePlaybackState(state);
 
   switch (event.type) {
+    case "ALGORITHM_SELECTED": {
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      next.lastAugmentingPath = undefined;
+      break;
+    }
     case "RUN_START": {
       next.isRunning = true;
       next.error = undefined;
@@ -95,6 +101,32 @@ export function applyFlowEvent(state: PlaybackState, event: FlowEvent): Playback
       next.highlightedNodes.clear();
       next.highlightedEdges.clear();
       next.lastAugmentingPath = undefined;
+      break;
+    }
+    case "DINIC_LEVEL_GRAPH_BUILT": {
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      break;
+    }
+    case "DINIC_BLOCKING_FLOW_END": {
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      next.lastAugmentingPath = undefined;
+      break;
+    }
+    case "PUSH_RELABEL_INIT": {
+      next.highlightedNodes.clear();
+      next.highlightedEdges.clear();
+      break;
+    }
+    case "PUSH_RELABEL_PUSH": {
+      next.highlightedNodes = new Set([event.from, event.to]);
+      next.highlightedEdges = new Set([event.originalEdgeId]);
+      break;
+    }
+    case "PUSH_RELABEL_RELABEL": {
+      next.highlightedNodes = new Set([event.node]);
+      next.highlightedEdges.clear();
       break;
     }
     case "MINCUT_COMPUTED": {
