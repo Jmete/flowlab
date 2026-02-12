@@ -130,6 +130,7 @@ label {
   border: 1px solid hsl(var(--border) / 0.8);
   border-radius: calc(var(--radius) - 1px);
   overflow: hidden;
+  margin: 0.55rem;
 }
 
 .react-flow__controls-button:hover {
@@ -142,4 +143,12 @@ label {
 
 .react-flow__attribution {
   display: none;
+}
+
+@media (max-width: 640px) {
+  .react-flow__controls {
+    transform: scale(0.92);
+    transform-origin: bottom right;
+    margin: 0.5rem;
+  }
 }

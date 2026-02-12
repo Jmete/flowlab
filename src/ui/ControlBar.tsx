@@ -31,6 +31,7 @@ export function ControlBar() {
     clearSelection,
     setConnectFromNode,
     autoTidyLayout,
+    loadBlankGraph,
   } = useFlowLabStore(
     useShallow((state) => ({
       graph: state.graph,
@@ -54,12 +55,20 @@ export function ControlBar() {
       clearSelection: state.clearSelection,
       setConnectFromNode: state.setConnectFromNode,
       autoTidyLayout: state.autoTidyLayout,
+      loadBlankGraph: state.loadBlankGraph,
     })),
   );
 
   const nodeCount = Object.keys(graph.nodes).length;
   const edgeCount = Object.keys(graph.edges).length;
   const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const speedValue = isMounted ? String(playbackSpeed) : "1.25";
 
   function onPlayPause() {
     if (isPlaying) {
@@ -87,59 +96,81 @@ export function ControlBar() {
     setConnectFromNode(undefined);
   }
 
+  function onClearGraph() {
+    const confirmed = window.confirm("Clear all nodes and edges? This cannot be undone.");
+    if (!confirmed) {
+      return;
+    }
+
+    pause();
+    loadBlankGraph();
+  }
+
   return (
-    <div className="panel-shell flex flex-wrap items-center gap-1.5 rounded-md border px-2 py-2">
-      <Button variant="outline" onClick={stepBack}>
-        Backward
-      </Button>
-      <Button variant={isPlaying ? "secondary" : "default"} onClick={onPlayPause}>
-        {isPlaying ? "Pause" : "Play"}
-      </Button>
-      <Button variant="outline" onClick={stepForward}>
-        Forward
-      </Button>
-      <Button variant="outline" onClick={onReset}>
-        Reset
-      </Button>
-      <Button variant="outline" onClick={autoTidyLayout}>
-        Auto Tidy
-      </Button>
+    <div className="panel-shell rounded-md border px-2 py-2">
+      <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:items-center">
+          <Button variant="outline" onClick={stepBack} className="w-full sm:w-auto">
+            Backward
+          </Button>
+          <Button variant={isPlaying ? "secondary" : "default"} onClick={onPlayPause} className="w-full sm:w-auto">
+            {isPlaying ? "Pause" : "Play"}
+          </Button>
+          <Button variant="outline" onClick={stepForward} className="w-full sm:w-auto">
+            Forward
+          </Button>
+          <Button variant="outline" onClick={onReset} className="w-full sm:w-auto">
+            Reset
+          </Button>
+          <Button variant="outline" onClick={autoTidyLayout} className="w-full sm:w-auto">
+            Auto Tidy
+          </Button>
+          <Button variant="destructive" onClick={onClearGraph} className="w-full sm:w-auto">
+            Clear Graph
+          </Button>
 
-      <div className="mx-1 h-7 w-px bg-border/80" />
+          <div className="col-span-2 hidden h-7 w-px bg-border/80 sm:block" />
 
-      <Button variant={showResidual ? "default" : "outline"} onClick={() => setShowResidual(!showResidual)}>
-        Show Residual
-      </Button>
-      <Button variant={showMinCut ? "default" : "outline"} onClick={() => setShowMinCut(!showMinCut)}>
-        Show Min Cut
-      </Button>
+          <Button
+            variant={showResidual ? "default" : "outline"}
+            onClick={() => setShowResidual(!showResidual)}
+            className="w-full sm:w-auto"
+          >
+            Show Residual
+          </Button>
+          <Button variant={showMinCut ? "default" : "outline"} onClick={() => setShowMinCut(!showMinCut)} className="w-full sm:w-auto">
+            Show Min Cut
+          </Button>
 
-      <div className="ml-auto flex items-center gap-2">
-        <label htmlFor="speed-selector" className="text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-          Speed
-        </label>
-        <Select
-          id="speed-selector"
-          value={String(playbackSpeed)}
-          onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
-          className="w-20 text-xs"
-        >
-          {speedOptions.map((speed) => (
-            <option key={speed} value={speed}>
-              {speed.toFixed(2)}x
-            </option>
-          ))}
-        </Select>
-      </div>
+          <div className="col-span-2 flex items-center justify-between gap-2 sm:col-auto sm:ml-auto sm:justify-start">
+            <label
+              htmlFor="speed-selector"
+              className="text-[11px] font-semibold uppercase tracking-[0.11em] text-muted-foreground"
+            >
+              Speed
+            </label>
+            <Select
+              id="speed-selector"
+              value={speedValue}
+              onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+              className="w-24 text-xs"
+            >
+              {speedOptions.map((speed) => (
+                <option key={speed} value={speed}>
+                  {speed.toFixed(2)}x
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
 
-      <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border/60 pt-1.5 text-[10px] text-muted-foreground">
-        <span className="uppercase tracking-[0.12em]">
-          {nodeCount} nodes / {edgeCount} edges • {mode} mode
-          {error ? ` • ${error}` : ""}
-        </span>
-        <span className="text-right">
-          Tip: Right-click canvas to add nodes. Right-click nodes or edges to edit.
-        </span>
+        <div className="grid w-full gap-1 border-t border-border/60 pt-1.5 text-[10px] text-muted-foreground sm:grid-cols-[auto_1fr] sm:items-center sm:gap-3">
+          <span className="uppercase tracking-[0.12em]">
+            {nodeCount} nodes / {edgeCount} edges • {mode} mode
+            {error ? ` • ${error}` : ""}
+          </span>
+          <span className="text-left sm:text-right">Tip: Right-click graph items for quick actions.</span>
+        </div>
       </div>
     </div>
   );

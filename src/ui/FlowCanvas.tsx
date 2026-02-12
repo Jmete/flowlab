@@ -529,7 +529,7 @@ function FlowCanvasInner() {
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} color="hsl(var(--grid-line))" />
-        <Controls />
+        <Controls position="bottom-right" />
       </ReactFlow>
 
       {connectFromNodeId ? (
