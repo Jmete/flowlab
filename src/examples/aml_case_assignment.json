@@ -1,0 +1,33 @@
+{
+  "nodes": {
+    "s": { "id": "s", "label": "S", "x": 80, "y": 220, "role": "source" },
+    "cards": { "id": "cards", "label": "Cards", "x": 260, "y": 90, "role": "normal" },
+    "wires": { "id": "wires", "label": "Wires", "x": 260, "y": 220, "role": "normal" },
+    "trade": { "id": "trade", "label": "Trade", "x": 260, "y": 350, "role": "normal" },
+    "aisha": { "id": "aisha", "label": "Aisha", "x": 470, "y": 70, "role": "normal" },
+    "omar": { "id": "omar", "label": "Omar", "x": 470, "y": 170, "role": "normal" },
+    "sara": { "id": "sara", "label": "Sara", "x": 470, "y": 270, "role": "normal" },
+    "hassan": { "id": "hassan", "label": "Hassan", "x": 470, "y": 370, "role": "normal" },
+    "t": { "id": "t", "label": "T", "x": 680, "y": 220, "role": "sink" }
+  },
+  "edges": {
+    "e1": { "id": "e1", "from": "s", "to": "cards", "capacity": 12, "flow": 0, "directed": true },
+    "e2": { "id": "e2", "from": "s", "to": "wires", "capacity": 7, "flow": 0, "directed": true },
+    "e3": { "id": "e3", "from": "s", "to": "trade", "capacity": 5, "flow": 0, "directed": true },
+    "e4": { "id": "e4", "from": "cards", "to": "aisha", "capacity": 5, "flow": 0, "directed": true },
+    "e5": { "id": "e5", "from": "cards", "to": "omar", "capacity": 2, "flow": 0, "directed": true },
+    "e6": { "id": "e6", "from": "wires", "to": "omar", "capacity": 4, "flow": 0, "directed": true },
+    "e7": { "id": "e7", "from": "wires", "to": "sara", "capacity": 3, "flow": 0, "directed": true },
+    "e8": { "id": "e8", "from": "trade", "to": "hassan", "capacity": 4, "flow": 0, "directed": true },
+    "e9": { "id": "e9", "from": "trade", "to": "sara", "capacity": 1, "flow": 0, "directed": true },
+    "e10": { "id": "e10", "from": "aisha", "to": "t", "capacity": 6, "flow": 0, "directed": true },
+    "e11": { "id": "e11", "from": "omar", "to": "t", "capacity": 5, "flow": 0, "directed": true },
+    "e12": { "id": "e12", "from": "sara", "to": "t", "capacity": 4, "flow": 0, "directed": true },
+    "e13": { "id": "e13", "from": "hassan", "to": "t", "capacity": 4, "flow": 0, "directed": true }
+  },
+  "meta": {
+    "version": "1.0",
+    "createdAt": 1730000000000,
+    "updatedAt": 1730000000000
+  }
+}
